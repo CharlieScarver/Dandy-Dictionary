@@ -236,7 +236,7 @@ int inputNumber(int min, int max) {
         scanf("%d", &input);
         getchar(); // Consume the newline
         if (input < min || input > max) {
-            printf("Invalid input. Valid input is %d <= X <= %d.\n", min, max);
+            printf("\nInvalid input. Valid input is %d <= X <= %d.\n", min, max);
             printf("Enter a valid number:\n\n");
             printf("\n> ");
             inputAgain = true;
@@ -246,4 +246,41 @@ int inputNumber(int min, int max) {
     } while(inputAgain);
 
     return input;
+}
+
+// ### User Accessible Commands ###
+
+void addWord(WordEntry *we, WordNode *head) {
+    for (WordNode *p = head; p != NULL; p = p->next) {
+        if (p->next == NULL) {
+            WordNode *newNode = malloc(sizeof(WordNode));
+            // Initialize malloc pointers!
+            newNode->next = NULL;
+            newNode->value = *we;
+            p->next = newNode;
+            break;
+        }
+    }
+
+    // TODO: Write to file as well??
+}
+
+void getWord(char *word, WordNode *head) {
+    printf("\nThe word entry for \"%s\" is:\n");
+    for (WordNode *p = head; p != NULL; p = p->next) {
+        if (strcmp(p->value.word, word)) {
+            printWordEntry(&p->value);
+        }
+    }
+    printf("\n");
+}
+
+void getWordsWithoutTranslations(WordNode *head) {
+    printf("\nThe word entries without any translations are:\n");
+    for (WordNode *p = head; p != NULL; p = p->next) {
+        if (p->value.translationsInLang1 == NULL && p->value.translationsInLang2 == NULL) {
+            printWordEntry(&p->value);
+        }
+    }
+    printf("\n");
 }

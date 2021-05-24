@@ -44,7 +44,7 @@ void writeTestDataToBin();
 // ### Reading ###
 
 // String is prefixed by its length
-char* readStringFromBin(FILE *fr);
+char *readStringFromBin(FILE *fr);
 TranslationNode* readTranslationsFromBin(FILE *fr);
 
 // ### Printing ###
@@ -55,5 +55,11 @@ void printTranslationEntry(TranslationEntry *te);
 // ### User Input ###
 
 int inputNumber(int min, int max);
+
+// ### User Accessible Commands ###
+
+void addWord(WordEntry *we, WordNode *head);
+void getWord(char *word, WordNode *head);
+void getWordsWithoutTranslations(WordNode *head);
 
 #endif // LIB_H_INCLUDED
