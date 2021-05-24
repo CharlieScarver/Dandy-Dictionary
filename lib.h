@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MAX_WORD_LEN 50
 #define MAX_SENT_LEN 255
@@ -50,5 +51,9 @@ TranslationNode* readTranslationsFromBin(FILE *fr);
 
 void printWordEntry(WordEntry *we);
 void printTranslationEntry(TranslationEntry *te);
+
+// ### User Input ###
+
+int inputNumber(int min, int max);
 
 #endif // LIB_H_INCLUDED

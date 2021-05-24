@@ -24,7 +24,8 @@ void writeStringToBin(char *string, FILE *fr) {
 
 void writeTestDataToBin() {
     char word[MAX_WORD_LEN] = "kniga";
-    char translation[MAX_WORD_LEN] = "book";
+    char engTranslation[MAX_WORD_LEN] = "book";
+    char gerTranslation[MAX_WORD_LEN] = "buch";
     char type = 'n';
     char engSentence[MAX_SENT_LEN] = "I'm reading a book.";
     char gerSentence[MAX_SENT_LEN] = "Ich lese ein Buch.";
@@ -35,7 +36,7 @@ void writeTestDataToBin() {
     FILE *fw = fopen("bg.bin", "wb");
 
     if (fw == NULL) {
-        perror("File open");
+        perror("File open to write");
         exit(EXIT_FAILURE);
     }
 
@@ -61,7 +62,7 @@ void writeTestDataToBin() {
     }
 
     // Write the translation
-    writeStringToBin(translation, fw);
+    writeStringToBin(engTranslation, fw);
     // Write the type
     if (fwrite(&type, sizeof(char), 1, fw) != 1) {
         if (!feof(fw)) {
@@ -73,11 +74,23 @@ void writeTestDataToBin() {
     writeStringToBin(engSentence, fw);
 
     // -- Write the GR translations --
-    numberOfTranslations = 0;
+    numberOfTranslations = 1;
     if (fwrite(&numberOfTranslations, sizeof(unsigned), 1, fw) != 1) {
         perror("Write error");
         exit(EXIT_FAILURE);
     }
+
+    // Write the translation
+    writeStringToBin(gerTranslation, fw);
+    // Write the type
+    if (fwrite(&type, sizeof(char), 1, fw) != 1) {
+        if (!feof(fw)) {
+            perror("Read error");
+            exit(EXIT_FAILURE);
+        }
+    }
+    // Write the sentence
+    writeStringToBin(gerSentence, fw);
 
     // -- Write the added on date --
     writeStringToBin(addedOn, fw);
@@ -162,6 +175,8 @@ TranslationNode* readTranslationsFromBin(FILE *fr) {
         // TranslationNode transNode;
 
         TranslationNode *transNode = malloc(sizeof(TranslationNode));
+        // If malloc-ed pointers are not initialized they receive placeholder value like 0xbaadf00dbaadf00d (which is != NULL) causing unwanted behavior
+        transNode->next = NULL;
 
         if (previous == NULL) {
             head = transNode;
@@ -210,4 +225,25 @@ void printWordEntry(WordEntry *we) {
 
 void printTranslationEntry(TranslationEntry *te) {
     printf("{\n    translation: %s,\n    type: %c,\n    sentence: %s\n  }", te->translation, te->type, te->sentence);
+}
+
+// ### User Input ###
+
+int inputNumber(int min, int max) {
+    bool inputAgain = false;
+    int input = -1;
+    do {
+        scanf("%d", &input);
+        getchar(); // Consume the newline
+        if (input < min || input > max) {
+            printf("Invalid input. Valid input is %d <= X <= %d.\n", min, max);
+            printf("Enter a valid number:\n\n");
+            printf("\n> ");
+            inputAgain = true;
+        } else {
+            inputAgain = false;
+        }
+    } while(inputAgain);
+
+    return input;
 }

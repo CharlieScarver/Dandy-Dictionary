@@ -4,14 +4,33 @@ int main()
 {
     writeTestDataToBin();
 
-    // --- 2 --- Read data
+    // -- Choose language --
+    printf("Choose a language:\n  1. Bulgarian\n  2. English\n  3. German\n");
+    printf("\n> ");
+
+    int input = inputNumber(1, 3);
+
+    char filename[10];
+    switch (input) {
+        case 1:
+            strcpy(filename, "bg.bin");
+            break;
+        case 2:
+            strcpy(filename, "eng.bin");
+            break;
+        case 3:
+            strcpy(filename, "ger.bin");
+            break;
+    }
+
+    // -- Read data --
     printf("=====\n");
 
-    FILE *fr = fopen("bg.bin", "rb");
+    FILE *fr = fopen(filename, "rb");
         printf("ftell: %u\n", ftell(fr));
 
     if (fr == NULL) {
-        perror("File open 2");
+        perror("File open to read");
         exit(EXIT_FAILURE);
     }
 
@@ -20,6 +39,9 @@ int main()
 
     while (1) {
         WordNode *wordNode = malloc(sizeof(WordNode));
+        // If malloc-ed pointers are not initialized they receive placeholder value like 0xbaadf00dbaadf00d (which is != NULL) causing unwanted behavior
+        wordNode->next = NULL;
+
         // Read the word
         char *word = readStringFromBin(fr);
         if (word == NULL) {
