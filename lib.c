@@ -22,86 +22,129 @@ void writeStringToBin(char *str, FILE *fr) {
     }
 }
 
-void writeTestDataToBin() {
-    char word[MAX_WORD_LEN] = "kniga";
-    char engTranslation[MAX_WORD_LEN] = "book";
-    char gerTranslation[MAX_WORD_LEN] = "buch";
-    char type = 'n';
-    char engSentence[MAX_SENT_LEN] = "I'm reading a book.";
-    char gerSentence[MAX_SENT_LEN] = "Ich lese ein Buch.";
-    char addedOn[DATE_LEN] = "23.05.2021";
-    unsigned rating = 10;
-    // fgets(word, 20, stdin);
+void writeTranslationsToBin(TranslationNode *head, FILE *fw) {
+    unsigned numberOfTranslationsInLang1 = countTranslationNodes(head);
+    if (fwrite(&numberOfTranslationsInLang1, sizeof(unsigned), 1, fw) != 1) {
+        perror("Write error");
+        exit(EXIT_FAILURE);
+    }
 
-    FILE *fw = fopen("bg.bin", "wb");
+    for (TranslationNode *t = head; t != NULL; t = t->next) {
+        // Write the translation
+        writeStringToBin(t->value.translation, fw);
+        // Write the type
+        if (fwrite(&t->value.type, sizeof(char), 1, fw) != 1) {
+            if (!feof(fw)) {
+                perror("Read error");
+                exit(EXIT_FAILURE);
+            }
+        }
+        // Write the sentence
+        writeStringToBin(t->value.sentence, fw);
+    }
+}
+
+void writeDictionaryToBin(WordNode *head, char *filename, char *writeMode) {
+    FILE *fw = fopen(filename, writeMode);
 
     if (fw == NULL) {
         perror("File open to write");
         exit(EXIT_FAILURE);
     }
 
-    unsigned wordLen = strlen(word);
+    for (WordNode *p = head; p != NULL; p = p->next) {
+        // -- Write the word --
+        writeStringToBin(p->value.word, fw);
 
-    // Remove the extra newline after fgets()
-    if (word[wordLen-1] == '\n') {
-        word[wordLen-1] = '\0';
-        wordLen--;
-    }
+        // -- Write the translations in language #1 --
+        if (p->value.translationsInLang1 != NULL) {
+            writeTranslationsToBin(p->value.translationsInLang1, fw);
+        }
 
-    printf("%s-\n", word);
-    printf("len = %d\n", wordLen);
+        // -- Write the translations in language #2 --
+        if (p->value.translationsInLang2 != NULL) {
+            writeTranslationsToBin(p->value.translationsInLang2, fw);
+        }
 
-    // -- Write the word --
-    writeStringToBin(word, fw);
+        // -- Write the added on date --
+        writeStringToBin(p->value.addedOn, fw);
 
-    // -- Write the EN translations --
-    unsigned numberOfTranslations = 1;
-    if (fwrite(&numberOfTranslations, sizeof(unsigned), 1, fw) != 1) {
-        perror("Write error");
-        exit(EXIT_FAILURE);
-    }
-
-    // Write the translation
-    writeStringToBin(engTranslation, fw);
-    // Write the type
-    if (fwrite(&type, sizeof(char), 1, fw) != 1) {
-        if (!feof(fw)) {
-            perror("Read error");
+        // -- Write the rating --
+        if (fwrite(&p->value.rating, sizeof(unsigned), 1, fw) != 1) {
+            perror("Write error");
             exit(EXIT_FAILURE);
         }
-    }
-    // Write the sentence
-    writeStringToBin(engSentence, fw);
-
-    // -- Write the GR translations --
-    numberOfTranslations = 1;
-    if (fwrite(&numberOfTranslations, sizeof(unsigned), 1, fw) != 1) {
-        perror("Write error");
-        exit(EXIT_FAILURE);
-    }
-
-    // Write the translation
-    writeStringToBin(gerTranslation, fw);
-    // Write the type
-    if (fwrite(&type, sizeof(char), 1, fw) != 1) {
-        if (!feof(fw)) {
-            perror("Read error");
-            exit(EXIT_FAILURE);
-        }
-    }
-    // Write the sentence
-    writeStringToBin(gerSentence, fw);
-
-    // -- Write the added on date --
-    writeStringToBin(addedOn, fw);
-
-    // -- Write the rating --
-    if (fwrite(&rating, sizeof(unsigned), 1, fw) != 1) {
-        perror("Write error");
-        exit(EXIT_FAILURE);
     }
 
     fclose(fw);
+}
+
+void writeTestDataToBin() {
+    // === Reusable pointers ===
+
+    WordNode *wordNode = malloc(sizeof(WordNode));
+    // Initialize malloc pointers! (0xbaadf00d != NULL)
+    wordNode->next = NULL;
+    wordNode->value.translationsInLang1 = NULL;
+    wordNode->value.translationsInLang2 = NULL;
+
+    // Bulgarian translations
+    TranslationNode *bgTransNode = malloc(sizeof(TranslationNode));
+    bgTransNode->next = NULL;
+
+    // English translations
+    TranslationNode *enTransNode = malloc(sizeof(TranslationNode));
+    enTransNode->next = NULL;
+
+    // German translations
+    TranslationNode *deTransNode = malloc(sizeof(TranslationNode));
+    deTransNode->next = NULL;
+
+
+    // === Common data ===
+    strcpy(wordNode->value.addedOn, "23.05.2021");
+
+    strcpy(bgTransNode->value.translation, "kniga");
+    bgTransNode->value.type = 'n';
+    strcpy(bgTransNode->value.sentence, "Prochetoh interesna kniga.");
+
+    strcpy(enTransNode->value.translation, "book");
+    enTransNode->value.type = 'n';
+    strcpy(enTransNode->value.sentence, "I'm reading a book.");
+
+    strcpy(deTransNode->value.translation, "buch");
+    deTransNode->value.type = 'n';
+    strcpy(deTransNode->value.sentence, "Ich lese ein Buch.");
+
+
+    // === Bulgarian file ===
+    strcpy(wordNode->value.word,"kniga");
+    wordNode->value.rating = 10;
+
+    wordNode->value.translationsInLang1 = enTransNode;
+    wordNode->value.translationsInLang2 = deTransNode;
+
+    writeDictionaryToBin(wordNode, "bg.bin", "wb");
+
+
+    // === English file ===
+    strcpy(wordNode->value.word, "book");
+    wordNode->value.rating = 9;
+
+    wordNode->value.translationsInLang1 = bgTransNode;
+    wordNode->value.translationsInLang2 = deTransNode;
+
+    writeDictionaryToBin(wordNode, "en.bin", "wb");
+
+
+    // === German file ===
+    strcpy(wordNode->value.word, "buch");
+    wordNode->value.rating = 8;
+
+    wordNode->value.translationsInLang1 = bgTransNode;
+    wordNode->value.translationsInLang2 = enTransNode;
+
+    writeDictionaryToBin(wordNode, "de.bin", "wb");
 }
 
 // ### Reading ###
@@ -288,7 +331,7 @@ TranslationNode *inputTranslations(Language lang) {
         }
 
         printf("\nTranslation number %d):\n", i+1);
-        printf("\nEnter a translation:\n", i);
+        printf("\nEnter a translation:\n");
         printf("\n> ");
         strcpy(newTransNode->value.translation, readStringFromStdin(MAX_WORD_LEN));
 
@@ -348,7 +391,7 @@ void listWordsWithoutTranslations(WordNode *head, Context *ctx) {
 void listAllWords(WordNode *head, Context *ctx) {
     printf("\nListing all word entries in the dictionary:\n");
     for (WordNode *p = head; p != NULL; p = p->next) {
-        printWordEntry(p, ctx);
+        printWordEntry(&p->value, ctx);
     }
     printf("\n");
 }
@@ -356,7 +399,6 @@ void listAllWords(WordNode *head, Context *ctx) {
 // ### Utility ###
 
 char *languageToString(Language lang) {
-    char langName[MAX_WORD_LEN];
     switch (lang) {
     case BG:
         return "Bulgarian";
@@ -365,4 +407,14 @@ char *languageToString(Language lang) {
     case DE:
         return "German";
     }
+    return "";
+}
+
+unsigned countTranslationNodes(TranslationNode *head) {
+    unsigned counter = 0;
+    for (TranslationNode *t = head; t != NULL; t = t->next) {
+        counter++;
+    }
+
+    return counter;
 }

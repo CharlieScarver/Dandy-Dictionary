@@ -27,13 +27,13 @@ int main()
             ctx->lang2 = DE;
             break;
         case 2:
-            strcpy(filename, "eng.bin");
+            strcpy(filename, "en.bin");
             ctx->chosenLang = EN;
             ctx->lang1 = BG;
             ctx->lang2 = DE;
             break;
         case 3:
-            strcpy(filename, "ger.bin");
+            strcpy(filename, "de.bin");
             ctx->chosenLang = DE;
             ctx->lang1 = BG;
             ctx->lang2 = EN;
@@ -44,7 +44,7 @@ int main()
     printf("=====\n");
 
     FILE *fr = fopen(filename, "rb");
-    printf("ftell: %u\n", ftell(fr));
+    printf("ftell: %ld\n", ftell(fr));
 
     if (fr == NULL) {
         perror("File open to read");
@@ -97,7 +97,7 @@ int main()
             previous->next = wordNode;
         }
 
-        printf("ftell: %u\n", ftell(fr));
+        printf("ftell: %ld\n", ftell(fr));
         // position 67 (of 532 bits) => 1 position = 1 byte = 8 bits
     }
 
@@ -142,7 +142,7 @@ int main()
                 newNode->value.translationsInLang2 = inputTranslations(ctx->lang2);
 
                 clearTheScreen();
-                addWord(newNode, head);
+                addWord(&newNode->value, head);
                 break;
             }
             case 2: {

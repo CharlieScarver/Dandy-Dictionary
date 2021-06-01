@@ -46,6 +46,8 @@ typedef struct {
 
 // String is prefixed by its length
 void writeStringToBin(char *str, FILE *fr);
+void writeTranslationsToBin(TranslationNode *head, FILE *fw);
+void writeDictionaryToBin(WordNode *head, char *filename, char *writeMode);
 void writeTestDataToBin();
 
 // ### Reading ###
@@ -76,5 +78,6 @@ void listAllWords(WordNode *head, Context *ctx);
 // ### Utility ###
 
 char *languageToString(Language lang);
+unsigned countTranslationNodes(TranslationNode *head);
 
 #endif // LIB_H_INCLUDED
