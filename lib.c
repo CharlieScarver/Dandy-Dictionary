@@ -3,8 +3,8 @@
 // ### Writing ###
 
 // String is prefixed by its length
-void writeStringToBin(char *string, FILE *fr) {
-    unsigned length = strlen(string);
+void writeStringToBin(char *str, FILE *fr) {
+    unsigned length = strlen(str);
     // Write the length
     if (fwrite(&length, sizeof(unsigned), 1, fr) != 1) {
         if (!feof(fr)) {
@@ -14,7 +14,7 @@ void writeStringToBin(char *string, FILE *fr) {
     }
 
     // Write the string
-    if (fwrite(string, sizeof(char), length, fr) != length) {
+    if (fwrite(str, sizeof(char), length, fr) != length) {
         if (!feof(fr)) {
             perror("Read error");
             exit(EXIT_FAILURE);
@@ -107,7 +107,7 @@ void writeTestDataToBin() {
 // ### Reading ###
 
 // String is prefixed by its length
-char* readStringFromBin(FILE *fr) {
+char *readStringFromBin(FILE *fr) {
     unsigned length;
     // Read the length
     if (fread(&length, sizeof(unsigned), 1, fr) != 1) {
@@ -151,7 +151,7 @@ char* readStringFromBin(FILE *fr) {
     return buffer;
 }
 
-TranslationNode* readTranslationsFromBin(FILE *fr) {
+TranslationNode *readTranslationsFromBin(FILE *fr) {
     unsigned length;
     // Read the length
     if (fread(&length, sizeof(unsigned), 1, fr) != 1) {
@@ -205,16 +205,30 @@ TranslationNode* readTranslationsFromBin(FILE *fr) {
     return head;
 }
 
+char *readStringFromStdin(unsigned maxLength) {
+    char *word = malloc(sizeof(char)*(maxLength+1));
+    fgets(word, MAX_WORD_LEN, stdin);
+
+    unsigned wordLen = strlen(word);
+    // Remove the extra newline after fgets()
+    if (word[wordLen-1] == '\n') {
+        word[wordLen-1] = '\0';
+        wordLen--;
+    }
+
+    return word;
+}
+
 // ### Printing ###
 
-void printWordEntry(WordEntry *we) {
-    printf("{\n  word: %s,\n  translationsInLang1: [", we->word);
+void printWordEntry(WordEntry *we, Context *ctx) {
+    printf("{\n  word: %s,\n  translationsIn%s: [", we->word, languageToString(ctx->lang1));
     if(we->translationsInLang1 != NULL) {
         for (TranslationNode *p = we->translationsInLang1; p != NULL; p = p->next) {
             printTranslationEntry(&p->value);
         }
     }
-    printf("],\n  translationsInLang2: [");
+    printf("],\n  translationsIn%s: [", languageToString(ctx->lang2));
     if(we->translationsInLang2 != NULL) {
         for (TranslationNode *p = we->translationsInLang2; p != NULL; p = p->next) {
             printTranslationEntry(&p->value);
@@ -225,6 +239,11 @@ void printWordEntry(WordEntry *we) {
 
 void printTranslationEntry(TranslationEntry *te) {
     printf("{\n    translation: %s,\n    type: %c,\n    sentence: %s\n  }", te->translation, te->type, te->sentence);
+}
+
+void clearTheScreen() {
+    // Clear the screen
+    system("cls");
 }
 
 // ### User Input ###
@@ -248,6 +267,47 @@ int inputNumber(int min, int max) {
     return input;
 }
 
+TranslationNode *inputTranslations(Language lang) {
+    printf("\nEnter the number of translations in %s (0-20):\n", languageToString(lang));
+    printf("\n> ");
+    int numberOfTranslationsLang1 = inputNumber(0, 20);
+
+    TranslationNode *head = NULL;
+    TranslationNode *previousTranslationsLang1 = NULL;
+    for (int i = 0; i < numberOfTranslationsLang1; i++) {
+        TranslationNode *newTransNode = malloc(sizeof(TranslationNode));
+        // Initialize malloc pointers! (0xbaadf00d != NULL)
+        newTransNode->next = NULL;
+
+        if (previousTranslationsLang1 == NULL) {
+            previousTranslationsLang1 = newTransNode;
+            // Head of the translations
+            head = newTransNode;
+        } else {
+            previousTranslationsLang1->next = newTransNode;
+        }
+
+        printf("\nTranslation number %d):\n", i+1);
+        printf("\nEnter a translation:\n", i);
+        printf("\n> ");
+        strcpy(newTransNode->value.translation, readStringFromStdin(MAX_WORD_LEN));
+
+        printf("\nEnter a type:\n");
+        printf("\n> ");
+        newTransNode->value.type = *readStringFromStdin(1);
+
+        printf("\nEnter a sentence:\n");
+        printf("\n> ");
+        strcpy(newTransNode->value.sentence, readStringFromStdin(MAX_SENT_LEN));
+
+        previousTranslationsLang1 = newTransNode;
+
+        printf("\nTranslation %d added successfuly.\n\n", i+1);
+    }
+
+    return head;
+}
+
 // ### User Accessible Commands ###
 
 void addWord(WordEntry *we, WordNode *head) {
@@ -265,22 +325,44 @@ void addWord(WordEntry *we, WordNode *head) {
     // TODO: Write to file as well??
 }
 
-void getWord(char *word, WordNode *head) {
-    printf("\nThe word entry for \"%s\" is:\n");
+void getWord(char *word, WordNode *head, Context *ctx) {
+    printf("\nThe word entry for \"%s\" is:\n", word);
     for (WordNode *p = head; p != NULL; p = p->next) {
-        if (strcmp(p->value.word, word)) {
-            printWordEntry(&p->value);
+        if (strcmp(p->value.word, word) == 0) {
+            printWordEntry(&p->value, ctx);
         }
     }
     printf("\n");
 }
 
-void getWordsWithoutTranslations(WordNode *head) {
+void listWordsWithoutTranslations(WordNode *head, Context *ctx) {
     printf("\nThe word entries without any translations are:\n");
     for (WordNode *p = head; p != NULL; p = p->next) {
         if (p->value.translationsInLang1 == NULL && p->value.translationsInLang2 == NULL) {
-            printWordEntry(&p->value);
+            printWordEntry(&p->value, ctx);
         }
     }
     printf("\n");
+}
+
+void listAllWords(WordNode *head, Context *ctx) {
+    printf("\nListing all word entries in the dictionary:\n");
+    for (WordNode *p = head; p != NULL; p = p->next) {
+        printWordEntry(p, ctx);
+    }
+    printf("\n");
+}
+
+// ### Utility ###
+
+char *languageToString(Language lang) {
+    char langName[MAX_WORD_LEN];
+    switch (lang) {
+    case BG:
+        return "Bulgarian";
+    case EN:
+        return "English";
+    case DE:
+        return "German";
+    }
 }
